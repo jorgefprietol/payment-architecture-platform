@@ -14,7 +14,7 @@ LABEL org.opencontainers.image.source="https://github.com/jorgefprietol/payment-
 WORKDIR /app
 COPY --from=build --chown=10001:10001 /out/ ./
 RUN mkdir /data && chown 10001:10001 /data
-ENV ASPNETCORE_HTTP_PORTS=8080 DOTNET_EnableDiagnostics=0
+ENV ASPNETCORE_HTTP_PORTS=8080 DOTNET_EnableDiagnostics=0 SAGA_DATA_DIR=/data
 USER 10001:10001
 EXPOSE 8080
 HEALTHCHECK --interval=15s --timeout=5s --start-period=20s --retries=3 CMD ["/bin/bash", "-c", "set -e; exec 3<>/dev/tcp/127.0.0.1/8080; printf 'GET /health/ready HTTP/1.1\\r\\nHost: localhost\\r\\nConnection: close\\r\\n\\r\\n' >&3; read -r status <&3; [[ $status == *' 200 '* ]]"]

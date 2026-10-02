@@ -8,7 +8,6 @@ services:
     environment:
       API_TOKEN: ${API_TOKEN:?API_TOKEN is required}
       MIGRATION_PERCENTAGE: ${MIGRATION_PERCENTAGE:-25}
-      SAGA_DATA_DIR: /data
     volumes:
       - csharp-state:/data
     ports:
@@ -34,7 +33,6 @@ services:
     environment:
       API_TOKEN: ${API_TOKEN:?API_TOKEN is required}
       MIGRATION_PERCENTAGE: ${MIGRATION_PERCENTAGE:-25}
-      SAGA_DATA_DIR: /data
     volumes:
       - java-state:/data
     ports:
