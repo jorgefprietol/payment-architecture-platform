@@ -1,0 +1,14 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "TransferCompleted v1",
+  "type": "object",
+  "required": ["eventId", "transferId", "schemaVersion", "amountMinor", "currency"],
+  "properties": {
+    "eventId": { "type": "string", "format": "uuid", "not": { "const": "00000000-0000-0000-0000-000000000000" } },
+    "transferId": { "type": "string", "format": "uuid", "not": { "const": "00000000-0000-0000-0000-000000000000" } },
+    "schemaVersion": { "const": 1 },
+    "amountMinor": { "type": "integer", "minimum": 1, "maximum": 9223372036854775807 },
+    "currency": { "enum": ["USD", "EUR"] }
+  },
+  "additionalProperties": true
+}

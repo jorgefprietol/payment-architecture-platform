@@ -1,0 +1,166 @@
+name: CI
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  verify:
+    name: Verify (${{ matrix.os }})
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-dotnet@26b0ec14cb23fa6904739307f278c14f94c95bf1 # v5
+        with:
+          global-json-file: global.json
+      - uses: actions/setup-java@b6effb05e454b25005698d916606bdc6ffcbf961 # v5
+        with:
+          distribution: temurin
+          java-version: '21'
+      - name: Verify acceptance, parity and integrated flow
+        shell: pwsh
+        run: ./verify.ps1
+      - name: Validate PowerShell syntax
+        shell: pwsh
+        run: |
+          $files = @(Get-ChildItem scripts/*.ps1) + @(Get-Item verify.ps1)
+          foreach ($file in $files) {
+            $errors = $null
+            [System.Management.Automation.Language.Parser]::ParseFile($file.FullName, [ref]$null, [ref]$errors) | Out-Null
+            if ($errors.Count -gt 0) { throw "Invalid PowerShell: $($file.Name)" }
+          }
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        if: always()
+        with:
+          name: verification-${{ matrix.os }}
+          path: artifacts/
+          retention-days: 14
+  containers:
+    name: Containers, security and release
+    needs: verify
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    permissions:
+      contents: read
+      packages: write
+      id-token: write
+      attestations: write
+    env:
+      CSHARP_IMAGE: ghcr.io/${{ github.repository }}-csharp:${{ github.sha }}
+      JAVA_IMAGE: ghcr.io/${{ github.repository }}-java:${{ github.sha }}
+      API_TOKEN: ci-isolated-token-${{ github.sha }}
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
+      - uses: docker/setup-buildx-action@8d2750c68a42422c14e847fe6c8ac0403b4cbd6f # v3
+      - name: Validate workflow syntax
+        run: docker run --rm -v "$PWD:/repo" -w /repo rhysd/actionlint@sha256:6f03470d0152251d7f07f7c4dc019dbe7024c72cd952f839544c7798843efa8f
+      - name: Build CSharp
+        uses: docker/build-push-action@10e90e3645eae34f1e60eeb005ba3a3d33f178e8 # v6
+        with:
+          context: .
+          file: csharp/Dockerfile
+          build-args: SOURCE_REVISION=${{ github.sha }}
+          tags: ${{ env.CSHARP_IMAGE }}
+          platforms: linux/amd64
+          load: true
+          provenance: false
+          cache-from: type=gha,scope=csharp
+          cache-to: type=gha,mode=max,scope=csharp
+      - name: Build Java
+        uses: docker/build-push-action@10e90e3645eae34f1e60eeb005ba3a3d33f178e8 # v6
+        with:
+          context: .
+          file: java/Dockerfile
+          build-args: SOURCE_REVISION=${{ github.sha }}
+          tags: ${{ env.JAVA_IMAGE }}
+          platforms: linux/amd64
+          load: true
+          provenance: false
+          cache-from: type=gha,scope=java
+          cache-to: type=gha,mode=max,scope=java
+      - name: Verify packaged acceptance scenarios
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Force artifacts/security, artifacts/release | Out-Null
+          $csharp = @(docker run --rm $env:CSHARP_IMAGE --verify)
+          if ($LASTEXITCODE -ne 0) { throw 'CSharp packaged scenarios failed' }
+          $java = @(docker run --rm $env:JAVA_IMAGE --verify)
+          if ($LASTEXITCODE -ne 0) { throw 'Java packaged scenarios failed' }
+          if (($csharp -join "`n") -cne ($java -join "`n")) { throw 'Packaged parity failed' }
+          $csharp | Set-Content artifacts/container-verification.txt
+      - name: Start isolated services and verify HTTP contracts
+        shell: pwsh
+        run: |
+          docker compose -p payment-platform-ci up -d --no-build --pull never --wait --wait-timeout 90
+          if ($LASTEXITCODE -ne 0) { throw 'Service readiness failed' }
+          ./scripts/smoke.ps1
+      - name: Scan secrets, vulnerabilities and generate SBOMs
+        shell: bash
+        run: |
+          scanner='aquasec/trivy@sha256:62b1e65e8869bc4b4c6aa4fa2b21595256c7c2f6018a9d9ad61caf87187c1969'
+          docker run --rm -v "$PWD:/source:ro" "$scanner" fs --scanners secret --exit-code 1 /source
+          for language in csharp java; do
+            image="ghcr.io/${GITHUB_REPOSITORY}-${language}:${GITHUB_SHA}"
+            docker run --rm -v /var/run/docker.sock:/var/run/docker.sock -v trivy-cache:/root/.cache/trivy -v "$PWD/artifacts/security:/reports" \
+              "$scanner" image --scanners vuln --severity HIGH,CRITICAL --ignore-unfixed --exit-code 1 --format json --output "/reports/${language}-vulnerabilities.json" "$image"
+            docker run --rm -v /var/run/docker.sock:/var/run/docker.sock -v trivy-cache:/root/.cache/trivy -v "$PWD/artifacts/security:/reports" \
+              "$scanner" image --format spdx-json --output "/reports/${language}.spdx.json" "$image"
+          done
+      - uses: docker/login-action@c94ce9fb468520275223c153574b00df6fe4bcc9 # v3
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Publish the verified images and export the exact release
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        shell: bash
+        run: |
+          docker push "$CSHARP_IMAGE"
+          docker push "$JAVA_IMAGE"
+          docker save -o artifacts/release/images.tar "$CSHARP_IMAGE" "$JAVA_IMAGE"
+          gzip -1 artifacts/release/images.tar
+      - name: Generate immutable release manifest
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        shell: pwsh
+        run: ./scripts/package-release.ps1 -Commit $env:GITHUB_SHA -CsharpImage $env:CSHARP_IMAGE -JavaImage $env:JAVA_IMAGE
+      - name: Attest release provenance
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        uses: actions/attest-build-provenance@977bb373ede98d70efdf65b84cb5f73e068dcc2a # v3
+        with:
+          subject-path: artifacts/release/images.tar.gz
+      - name: Upload immutable release bundle
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: release-bundle
+          path: artifacts/release/
+          compression-level: 0
+          retention-days: 30
+          if-no-files-found: error
+      - name: Upload security and container evidence
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: container-evidence
+          path: |
+            artifacts/security/
+            artifacts/container-verification.txt
+          retention-days: 14
+      - name: Stop isolated services
+        if: always()
+        run: docker compose -p payment-platform-ci down

@@ -1,0 +1,53 @@
+name: payment-platform
+services:
+  csharp:
+    image: ${CSHARP_IMAGE:-payment-platform-csharp:local}
+    build:
+      context: .
+      dockerfile: csharp/Dockerfile
+    environment:
+      API_TOKEN: ${API_TOKEN:?API_TOKEN is required}
+      MIGRATION_PERCENTAGE: ${MIGRATION_PERCENTAGE:-25}
+    ports:
+      - "127.0.0.1:${CSHARP_PORT:-18080}:8080"
+    restart: unless-stopped
+    init: true
+    read_only: true
+    tmpfs:
+      - /tmp:rw,noexec,nosuid,size=64m
+    cap_drop: [ALL]
+    security_opt: [no-new-privileges:true]
+    mem_limit: 384m
+    cpus: 1.0
+    pids_limit: 128
+    logging:
+      driver: json-file
+      options: {max-size: "10m", max-file: "3"}
+  java:
+    image: ${JAVA_IMAGE:-payment-platform-java:local}
+    build:
+      context: .
+      dockerfile: java/Dockerfile
+    environment:
+      API_TOKEN: ${API_TOKEN:?API_TOKEN is required}
+      MIGRATION_PERCENTAGE: ${MIGRATION_PERCENTAGE:-25}
+    ports:
+      - "127.0.0.1:${JAVA_PORT:-18081}:8080"
+    restart: unless-stopped
+    init: true
+    read_only: true
+    tmpfs:
+      - /tmp:rw,noexec,nosuid,size=64m
+    cap_drop: [ALL]
+    security_opt: [no-new-privileges:true]
+    mem_limit: 384m
+    cpus: 1.0
+    pids_limit: 128
+    logging:
+      driver: json-file
+      options: {max-size: "10m", max-file: "3"}
+networks:
+  default:
+    ipam:
+      config:
+        - subnet: ${PAYMENT_SUBNET:-10.203.64.0/28}

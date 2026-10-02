@@ -1,0 +1,9 @@
+**/bin/
+**/obj/
+**/target/
+artifacts/
+*.log
+.env
+.env.*
+!.env.example
+.deploy/
