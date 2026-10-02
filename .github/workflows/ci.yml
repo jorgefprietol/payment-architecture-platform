@@ -108,6 +108,7 @@ jobs:
           docker compose -p payment-platform-ci up -d --no-build --pull never --wait --wait-timeout 90
           if ($LASTEXITCODE -ne 0) { throw 'Service readiness failed' }
           ./scripts/smoke.ps1
+          ./scripts/smoke-durable.ps1 -RestartContainers
       - name: Scan secrets, vulnerabilities and generate SBOMs
         shell: bash
         run: |

@@ -44,6 +44,8 @@ La instalación local utiliza un directorio independiente para credenciales, ent
 
 Los servicios se publican en loopback, C# en 18080 y Java en 18081. Se ejecutan readiness y smoke tests antes de actualizar `current.json`. Un fallo de readiness o smoke restaura las referencias, configuración y pruebas de la entrega previa. En la primera instalación, un fallo elimina sólo los servicios del proyecto `payment-platform`. Se conservan imágenes y directorios anteriores para recuperación.
 
+Los volúmenes `csharp-state` y `java-state` conservan checkpoints y recibos durante actualizaciones y rollback; los datos no se incluyen en las imágenes ni en el bundle. La promoción comprueba también la saga por HTTP y la recuperación automática del outbox. El rollback de imagen requiere compatibilidad del formato de datos: el formato actual es v1 y no contiene una migración destructiva. Una futura versión debe mantener lectores compatibles o incorporar recuperación de datos explícita.
+
 ## Recuperación y mantenimiento
 
 El runner debe estar conectado, Docker Desktop disponible y la sesión Windows iniciada. Su arranque se configura para la sesión de este usuario; operar antes del login exigiría instalar un servicio con los permisos correspondientes. El estado online del runner puede consultarse en Settings → Actions → Runners del repositorio privado.

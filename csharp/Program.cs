@@ -2,7 +2,12 @@ using System.Text.Json;
 using PaymentPlatform;
 
 if (args.Contains("--demo", StringComparer.Ordinal)) { Demo.Run(); return; }
-if (args.Contains("--serve", StringComparer.Ordinal)) { await Api.Run(); return; }
+if (args.Contains("--serve", StringComparer.Ordinal))
+{
+    try { await Api.Run(); }
+    catch (IOException failure) { Console.Error.WriteLine("server_start_failed: " + failure.Message); Environment.ExitCode = 1; }
+    return;
+}
 if (args.Contains("--healthcheck", StringComparer.Ordinal))
 {
     try { using var client = new HttpClient { Timeout = TimeSpan.FromSeconds(3) }; Environment.ExitCode = (await client.GetAsync("http://127.0.0.1:8080/health/ready")).IsSuccessStatusCode ? 0 : 1; }

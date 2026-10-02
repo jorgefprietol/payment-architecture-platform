@@ -20,7 +20,7 @@ flowchart LR
     Facts --> Analytics[Inbox y analítica]
 ```
 
-Las dos implementaciones son alternativas del mismo contrato. La saga y la proyección se validan mediante escenarios deterministas; el endpoint desplegado expone cotizaciones. El estado actual permanece en memoria. No se atribuyen garantías de persistencia o una liquidación bancaria real.
+Las dos implementaciones son alternativas del mismo contrato. La API expone cotizaciones y sagas persistentes: el checkpoint guarda estado, inbox y comandos pendientes de forma atómica; un dispatcher recupera el outbox al reiniciar. Los volúmenes conservan estado y recibos idempotentes entre recreaciones del contenedor. La proyección analítica permanece en memoria. Los participantes locales registran efectos demostrables; no se conectan a una liquidación bancaria real.
 
 ## Ejecutar con Docker
 
@@ -50,9 +50,21 @@ Invoke-RestMethod 'http://127.0.0.1:18080/quotes?id=11111111-1111-1111-1111-1111
 
 Los endpoints `/health/live`, `/health/ready` y `/metrics` permiten verificar operación. `/quotes` exige una credencial aleatoria de al menos 32 caracteres y admite `X-Correlation-ID`. `.env` no se incorpora a Git ni a las imágenes.
 
+## Saga persistente por HTTP
+
+```powershell
+$id = [Guid]::NewGuid(); $eventId = [Guid]::NewGuid()
+Invoke-RestMethod "http://127.0.0.1:18080/sagas/$id/events?eventId=$eventId&fact=Start" -Method Post -Headers $headers
+Invoke-RestMethod "http://127.0.0.1:18080/sagas/$id" -Headers $headers
+```
+
+El dispatcher confirma el comando `reserve`; después se reciben `Reserved`, `Approved` y `Settled` con un `eventId` distinto por hecho. La ruta alternativa `Rejected` → `Released` compensa la reserva. Repetir el mismo evento conserva estado y efectos; cambiar su contenido devuelve 409. [Contrato, persistencia y recuperación](docs/durable-sagas.md).
+
 ## Verificación
 
 El runner ejecuta **47 escenarios de aceptación por lenguaje**, comprueba la reanudación de snapshots y compara una huella de enrutamiento para 200 identificadores. El pipeline ejecuta además los escenarios dentro de las imágenes y smoke tests HTTP que verifican autenticación, validación, métricas y paridad.
+
+La verificación nativa termina y reinicia procesos reales antes de enviar y después del efecto pero antes de confirmarlo. Comprueba replay, compensación, recuperación automática y checkpoints intercambiables entre C# y Java. CI también reinicia los contenedores con sus volúmenes y verifica la saga por HTTP.
 
 ```powershell
 ./verify.ps1

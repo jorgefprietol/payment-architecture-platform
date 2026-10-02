@@ -8,6 +8,9 @@ services:
     environment:
       API_TOKEN: ${API_TOKEN:?API_TOKEN is required}
       MIGRATION_PERCENTAGE: ${MIGRATION_PERCENTAGE:-25}
+      SAGA_DATA_DIR: /data
+    volumes:
+      - csharp-state:/data
     ports:
       - "127.0.0.1:${CSHARP_PORT:-18080}:8080"
     restart: unless-stopped
@@ -31,6 +34,9 @@ services:
     environment:
       API_TOKEN: ${API_TOKEN:?API_TOKEN is required}
       MIGRATION_PERCENTAGE: ${MIGRATION_PERCENTAGE:-25}
+      SAGA_DATA_DIR: /data
+    volumes:
+      - java-state:/data
     ports:
       - "127.0.0.1:${JAVA_PORT:-18081}:8080"
     restart: unless-stopped
@@ -51,3 +57,6 @@ networks:
     ipam:
       config:
         - subnet: ${PAYMENT_SUBNET:-10.203.64.0/28}
+volumes:
+  csharp-state:
+  java-state:

@@ -18,7 +18,7 @@ flowchart LR
     Integration --> Inbox[Analytics: inbox + proyección]
 ```
 
-El diagrama expresa responsabilidades. El runner llama al núcleo dentro de un proceso y simula los hechos; las flechas no implican despliegues ni brokers operativos.
+El diagrama expresa responsabilidades. La API de saga aplica hechos, conserva snapshot/inbox/outbox en un checkpoint atómico y entrega los comandos a un participante local con recibos persistentes. Las flechas no implican un broker ni participantes bancarios externos. El núcleo y la proyección también tienen escenarios deterministas en memoria. [Persistencia y recuperación por reinicio](durable-sagas.md).
 
 ## Modularidad, acoplamiento y quantum
 

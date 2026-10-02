@@ -2,7 +2,7 @@
 
 1. **Modularizar por necesidad.** Añadir un contexto de notificaciones al inventario. Debe conservar un grupo independiente cuando recibe hechos asíncronos y posee despliegue y datos propios. Explicar qué ocurre si comparte base con el ledger y qué evidencias faltan para determinar su quantum.
 
-2. **Persistir la saga.** Implementar un adapter que guarde snapshot y comandos en una transacción local. Reiniciar después del commit y antes de publicar; el comando pendiente debe volver a enviarse con la misma clave y el participante debe aplicarlo una sola vez.
+2. **Saga persistente implementada.** El adaptador guarda snapshot, inbox y outbox en un checkpoint atómico. Las pruebas fuerzan reinicios después del commit y después del efecto antes del ack, verifican deduplicación y recuperación C#/Java. La siguiente extensión es trasladar el mismo contrato a una base transaccional y participantes en procesos independientes.
 
 3. **Resultado incierto.** Simular timeout después de una liquidación confirmada. Consultar el participante por Command.Id antes de compensar. Verificar que no se libera una reserva de una operación ya liquidada.
 
