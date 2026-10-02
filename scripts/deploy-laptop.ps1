@@ -39,9 +39,7 @@ try {
     for ($i = 0; $i -lt 2; $i++) {
         $reference = $expectedReferences[$i]
         if ($manifest.images[$i].reference -ne $reference) { throw 'Unexpected image reference' }
-        $metadata = docker image inspect $reference | ConvertFrom-Json
-        if ($LASTEXITCODE -ne 0 -or $metadata[0].Id -ne $manifest.images[$i].id -or
-            $metadata[0].Config.Labels.'org.opencontainers.image.revision' -ne $Commit) { throw 'Loaded image identity mismatch' }
+        & (Join-Path $PSScriptRoot 'verify-loaded-image.ps1') -Archive $archive -Reference $reference -ExpectedConfigId $manifest.images[$i].id -Commit $Commit
     }
     $envPath = Join-Path $root '.env'
     if (-not (Test-Path -LiteralPath $envPath)) {

@@ -28,7 +28,9 @@ El scanner bloquea vulnerabilidades HIGH/CRITICAL con corrección disponible. El
 
 ## Bundle de entrega
 
-Las imágenes se publican como `ghcr.io/jorgefprietol/payment-architecture-platform-csharp:<commit>` y `...-java:<commit>`. El mismo contenido se exporta como `images.tar.gz`; `release.json` vincula repositorio, commit, ejecución, checksum e identidades de imagen. El bundle recibe una [atestación de procedencia de GitHub](https://docs.github.com/en/actions/concepts/security/artifact-attestations).
+Las imágenes se publican como `ghcr.io/jorgefprietol/payment-architecture-platform-csharp:<commit>` y `...-java:<commit>`. El mismo contenido se exporta como `images.tar.gz`; `release.json` vincula repositorio, commit, ejecución, checksum y digest de configuración de cada imagen. El bundle recibe una [atestación de procedencia de GitHub](https://docs.github.com/en/actions/concepts/security/artifact-attestations).
+
+El digest de configuración se obtiene del archivo exportado, en lugar del campo `Id` dependiente del backend de Docker. Después de cargar las imágenes se comprueban la configuración firmada, las capas, la plataforma y la revisión de origen. Ese contrato funciona con el almacén clásico de Docker y con containerd en Docker Desktop.
 
 El despliegue verifica esa atestación contra el workflow CI, `refs/heads/main` y el commit seleccionado. Rechaza procedencia producida por runners propios. La exportación permite promover el contenido ya probado aunque las políticas de acceso de GHCR cambien; el despliegue usa el artefacto firmado de GitHub Actions.
 

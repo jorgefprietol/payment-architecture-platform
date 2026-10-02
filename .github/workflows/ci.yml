@@ -138,6 +138,14 @@ jobs:
         if: github.event_name == 'push' && github.ref == 'refs/heads/main'
         shell: pwsh
         run: ./scripts/package-release.ps1 -Commit $env:GITHUB_SHA -CsharpImage $env:CSHARP_IMAGE -JavaImage $env:JAVA_IMAGE
+      - name: Verify signed archive configuration contract
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        shell: pwsh
+        run: |
+          $manifest = Get-Content artifacts/release/release.json -Raw | ConvertFrom-Json
+          foreach ($image in $manifest.images) {
+            ./scripts/verify-loaded-image.ps1 -Archive artifacts/release/images.tar.gz -Reference $image.reference -ExpectedConfigId $image.id -Commit $env:GITHUB_SHA
+          }
       - name: Attest release provenance
         if: github.event_name == 'push' && github.ref == 'refs/heads/main'
         uses: actions/attest-build-provenance@977bb373ede98d70efdf65b84cb5f73e068dcc2a # v3
