@@ -13,6 +13,6 @@
 | Entrega de software | CI en Windows/Linux, contenedores, escaneo, SBOM, procedencia firmada y artefactos por commit |
 | Operación local | Runner privado, promoción sin recompilar, readiness, smoke tests y rollback |
 
-Las evidencias corresponden al código y a las ejecuciones registradas. Las capacidades no implican historial laboral en una empresa ni operación bancaria real.
+Las evidencias corresponden al código y a las ejecuciones registradas.
 
 El almacenamiento de la saga y de analítica se mantiene en memoria; los snapshots permiten reanudación cuando un adaptador conserva su estado. El servicio HTTP publicado ofrece cotizaciones. La integración con un broker, un proveedor de identidad y una base transaccional se describe en el roadmap.
