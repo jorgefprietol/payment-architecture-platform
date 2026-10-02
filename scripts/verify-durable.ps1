@@ -114,9 +114,12 @@ try {
         Check ($tampered -cne $checkpoint) 'Corruption fixture did not change the checkpoint'
         [IO.File]::WriteAllText($checkpointPath, $tampered)
         $rejected = $false
-        try { Start-ServiceProcess $language $data } catch { $rejected = $_.Exception.Message -match 'invalid_checkpoint' }
+        $startupFailure = ''
+        try { Start-ServiceProcess $language $data } catch { $startupFailure = $_.Exception.Message }
         Stop-ServiceProcess
-        Check $rejected 'Corrupt checkpoint was accepted on startup'
+        $diagnostic = $startupFailure + $script:stderr.GetAwaiter().GetResult()
+        $rejected = $diagnostic -match 'invalid_checkpoint'
+        Check $rejected "Corrupt checkpoint rejection failed: $diagnostic"
         Write-Output "PASS durable_${language}_restart_send_ack_replay_compensation_portable_checkpoint_background_corruption"
     }
     Check ($results.csharp -ceq $results.java) 'Durable HTTP contracts differ across languages'
