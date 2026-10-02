@@ -13,6 +13,6 @@ COPY --from=build --chown=10001:10001 /out/classes/ classes/
 ENV JAVA_TOOL_OPTIONS="-XX:MaxRAMPercentage=70.0 -XX:+ExitOnOutOfMemoryError"
 USER 10001:10001
 EXPOSE 8080
-HEALTHCHECK --interval=15s --timeout=10s --start-period=30s --retries=3 CMD ["java", "-cp", "/app/classes", "platform.Main", "--healthcheck"]
+HEALTHCHECK --interval=15s --timeout=5s --start-period=20s --retries=3 CMD ["/bin/bash", "-c", "set -e; exec 3<>/dev/tcp/127.0.0.1/8080; printf 'GET /health/ready HTTP/1.1\\r\\nHost: localhost\\r\\nConnection: close\\r\\n\\r\\n' >&3; read -r status <&3; [[ $status == *' 200 '* ]]"]
 ENTRYPOINT ["java", "-cp", "/app/classes", "platform.Main"]
 CMD ["--serve"]
