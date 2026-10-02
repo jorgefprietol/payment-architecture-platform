@@ -19,6 +19,8 @@ Las pruebas cubren rollback, afinidad, compensación pendiente, conflictos de id
 
 ## Contratos HTTP y contenedores
 
+`verify.ps1` también ejecuta la suite durable contra procesos HTTP reales: reinicio antes del envío, fallo abrupto después del efecto antes del ack, replay sin duplicados, compensación, checkpoint compatible entre lenguajes y dispatcher automático. La CI ejecuta esa suite tanto en Windows como en Linux. Los smoke tests durables de contenedores reinician ambos servicios y exigen que el volumen conserve los efectos y el snapshot.
+
 `scripts/smoke.ps1` exige readiness, rechaza solicitudes sin credencial, verifica el contrato de cotización y su correlation ID, comprueba errores de entrada y métricas y compara las respuestas C#/Java. Los contenedores llevan healthchecks del proceso y se instalan con `compose up --wait`.
 
 El workflow se validó con actionlint fijado por digest. Todos los scripts PowerShell pasaron validación sintáctica. Docker Compose valida la configuración antes del arranque. La red configurable usa un bloque explícito `/28`, evitando depender de los pools automáticos de Docker Desktop.
@@ -31,4 +33,4 @@ Las pruebas locales no sustituyen la evidencia de una ejecución remota. Un arte
 
 ## Alcance
 
-El SQL y el JSON Schema son recursos de referencia. La suite de aceptación verifica DTOs; los smoke tests verifican el contrato HTTP de cotización. No se ejecutan PostgreSQL, CDC, Kafka ni validación OIDC. El servicio utiliza una credencial local; los adaptadores de estado en memoria no ofrecen persistencia después de una caída del proceso.
+El SQL y el JSON Schema son recursos de referencia. La suite de aceptación verifica DTOs; los smoke tests verifican cotización y saga por HTTP. No se ejecutan PostgreSQL, CDC, Kafka ni validación OIDC. El servicio utiliza una credencial local. La saga y los recibos del participante se conservan en volúmenes; la analítica en memoria no ofrece persistencia después de una caída del proceso.

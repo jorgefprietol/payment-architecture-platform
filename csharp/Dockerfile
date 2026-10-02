@@ -13,6 +13,7 @@ LABEL org.opencontainers.image.source="https://github.com/jorgefprietol/payment-
       org.opencontainers.image.revision=$SOURCE_REVISION
 WORKDIR /app
 COPY --from=build --chown=10001:10001 /out/ ./
+RUN mkdir /data && chown 10001:10001 /data
 ENV ASPNETCORE_HTTP_PORTS=8080 DOTNET_EnableDiagnostics=0
 USER 10001:10001
 EXPOSE 8080

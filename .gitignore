@@ -7,3 +7,4 @@ artifacts/
 .env.*
 !.env.example
 .deploy/
+state/

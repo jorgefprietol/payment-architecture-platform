@@ -56,10 +56,12 @@ try {
     $composePath = Join-Path $releaseDirectory 'compose.yaml'
     Copy-Item -LiteralPath (Join-Path $sourceRoot 'compose.yaml') -Destination $composePath
     Copy-Item -LiteralPath (Join-Path $PSScriptRoot 'smoke.ps1') -Destination (Join-Path $releaseDirectory 'smoke.ps1')
+    Copy-Item -LiteralPath (Join-Path $PSScriptRoot 'smoke-durable.ps1') -Destination (Join-Path $releaseDirectory 'smoke-durable.ps1')
     try {
         docker compose --env-file $envPath -f $composePath -p payment-platform up -d --no-build --pull never --wait --wait-timeout 90
         if ($LASTEXITCODE -ne 0) { throw 'Candidate readiness failed' }
         & (Join-Path $releaseDirectory 'smoke.ps1') -Token $env:API_TOKEN
+        & (Join-Path $releaseDirectory 'smoke-durable.ps1') -Token $env:API_TOKEN
     } catch {
         $candidateFailure = $_
         if ($previous) {

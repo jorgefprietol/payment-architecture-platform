@@ -4,6 +4,7 @@
 **/obj
 **/target
 artifacts
+state
 .env
 .env.*
 **/*.log

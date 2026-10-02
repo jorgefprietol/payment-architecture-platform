@@ -10,6 +10,7 @@ LABEL org.opencontainers.image.source="https://github.com/jorgefprietol/payment-
       org.opencontainers.image.revision=$SOURCE_REVISION
 WORKDIR /app
 COPY --from=build --chown=10001:10001 /out/classes/ classes/
+RUN mkdir /data && chown 10001:10001 /data
 ENV JAVA_TOOL_OPTIONS="-XX:MaxRAMPercentage=70.0 -XX:+ExitOnOutOfMemoryError"
 USER 10001:10001
 EXPOSE 8080

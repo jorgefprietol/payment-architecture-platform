@@ -48,4 +48,5 @@ try {
     $csharpDemo | Set-Content -LiteralPath (Join-Path $artifactPath 'csharp-demo.jsonl') -Encoding utf8
     $javaDemo | Set-Content -LiteralPath (Join-Path $artifactPath 'java-demo.jsonl') -Encoding utf8
     Write-Output 'PASS end_to_end_demo_parity'
+    & (Join-Path $projectRoot 'scripts/verify-durable.ps1') -Dotnet $Dotnet -Java $Java
 } finally { Pop-Location }
