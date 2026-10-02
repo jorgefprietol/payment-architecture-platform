@@ -8,12 +8,17 @@ param(
 $ErrorActionPreference = 'Stop'
 $archivePath = Join-Path $OutputDirectory 'images.tar.gz'
 if (-not (Test-Path -LiteralPath $archivePath)) { throw 'Container archive missing' }
+$archiveManifest = @(tar -xOf $archivePath manifest.json | ConvertFrom-Json)
+if ($LASTEXITCODE -ne 0) { throw 'Container archive manifest cannot be read' }
 $imageEntries = @()
 foreach ($reference in @($CsharpImage, $JavaImage)) {
     $imageMetadata = docker image inspect $reference | ConvertFrom-Json
     if ($LASTEXITCODE -ne 0) { throw 'Image inspection failed' }
     if ($imageMetadata[0].Config.Labels.'org.opencontainers.image.revision' -ne $Commit) { throw 'Image revision mismatch' }
-    $imageEntries += @{ reference = $reference; id = $imageMetadata[0].Id }
+    $archiveEntry = $archiveManifest | Where-Object { $_.RepoTags -contains $reference } | Select-Object -First 1
+    $configDigest = [regex]::Match($archiveEntry.Config, '([a-f0-9]{64})(?:\.json)?$')
+    if (-not $configDigest.Success) { throw 'Archive config digest missing' }
+    $imageEntries += @{ reference = $reference; id = "sha256:$($configDigest.Groups[1].Value)" }
 }
 $manifest = [ordered]@{
     schemaVersion = 1
