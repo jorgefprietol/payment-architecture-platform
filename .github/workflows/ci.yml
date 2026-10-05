@@ -96,6 +96,12 @@ jobs:
         shell: pwsh
         run: |
           New-Item -ItemType Directory -Force artifacts/security, artifacts/release | Out-Null
+          $javaSettings = @(docker run --rm --entrypoint java $env:JAVA_IMAGE -XshowSettings:properties -version 2>&1)
+          if ($LASTEXITCODE -ne 0) { throw 'Java runtime inspection failed' }
+          if (($javaSettings -join "`n") -notmatch '(?m)^\s*java\.specification\.version\s*=\s*21\s*$') {
+            throw 'The packaged runtime must use the supported Java 21 LTS baseline'
+          }
+          $javaSettings | Set-Content artifacts/java-runtime.txt
           $csharp = @(docker run --rm $env:CSHARP_IMAGE --verify)
           if ($LASTEXITCODE -ne 0) { throw 'CSharp packaged scenarios failed' }
           $java = @(docker run --rm $env:JAVA_IMAGE --verify)
@@ -169,6 +175,7 @@ jobs:
           path: |
             artifacts/security/
             artifacts/container-verification.txt
+            artifacts/java-runtime.txt
           retention-days: 14
       - name: Stop isolated services
         if: always()

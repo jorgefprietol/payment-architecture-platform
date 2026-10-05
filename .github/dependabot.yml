@@ -12,3 +12,8 @@ updates:
     directory: /java
     schedule: {interval: weekly}
     open-pull-requests-limit: 3
+    # Java 21 is the supported LTS baseline; runtime migrations need a separate review.
+    # Keep minor, patch and digest updates enabled for both JDK and JRE images.
+    ignore:
+      - dependency-name: eclipse-temurin
+        update-types: [version-update:semver-major]

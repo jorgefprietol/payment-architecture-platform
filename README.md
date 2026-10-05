@@ -80,6 +80,8 @@ dotnet run --project csharp/PaymentPlatform.csproj -c Release -- --demo
 
 Cada PR ejecuta CI en runners hospedados de Windows y Linux. Los contenedores se construyen con imágenes base fijadas por digest, se prueban y se escanean. Los hallazgos HIGH/CRITICAL con corrección disponible bloquean la publicación; se conservan informes de vulnerabilidades y SBOM SPDX.
 
+Java usa la línea LTS 21 tanto para compilar como para ejecutar. CI inspecciona la versión real del runtime empaquetado y conserva la evidencia. Dependabot mantiene las actualizaciones de parches y digests; las migraciones a otra versión mayor requieren un cambio explícito del contrato y sus verificaciones.
+
 Una ejecución correcta de `main` publica imágenes identificadas por el SHA del commit en GHCR y un bundle de entrega con checksum y atestación de procedencia. El controlador privado de despliegue detecta las entregas aprobadas y las promueve a esta laptop sin recompilar. Verifica procedencia, imagen, readiness y contratos HTTP; conserva la entrega anterior para rollback.
 
 El runner de la laptop pertenece exclusivamente al repositorio privado de despliegue. Las contribuciones al repositorio público se validan en infraestructura hospedada de GitHub. El despliegue local requiere la sesión Windows, el runner y Docker Desktop disponibles.
