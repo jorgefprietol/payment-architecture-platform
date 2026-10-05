@@ -1,4 +1,4 @@
-FROM mcr.microsoft.com/dotnet/sdk:10.0@sha256:83e0db97c45d2e39b80123fe42940a23c423405a17f80b608a4b8768033d6392 AS build
+FROM mcr.microsoft.com/dotnet/sdk:10.0@sha256:e70cdb7f80b0348f5cb85f19a8f670fca061f033d57eed12fa003d58b0e06317 AS build
 WORKDIR /src
 COPY global.json ./
 COPY csharp/PaymentPlatform.csproj csharp/
@@ -6,7 +6,7 @@ RUN dotnet restore csharp/PaymentPlatform.csproj
 COPY csharp/ csharp/
 RUN dotnet publish csharp/PaymentPlatform.csproj -c Release --no-restore -o /out /p:UseAppHost=false
 
-FROM mcr.microsoft.com/dotnet/aspnet:10.0@sha256:57460add89e2b3dd1950c41d8b7dc96eeb7a24d13d98e3656ce9997a8b746bd6
+FROM mcr.microsoft.com/dotnet/aspnet:10.0@sha256:222759b391a1aaf241166672c8f99b2d4ada452e7b5319f3c6e8f265a37b5ad4
 ARG SOURCE_REVISION=unknown
 LABEL org.opencontainers.image.source="https://github.com/jorgefprietol/payment-architecture-platform" \
       org.opencontainers.image.title="Payment Platform CSharp" \
