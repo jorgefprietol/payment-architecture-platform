@@ -3,7 +3,7 @@ WORKDIR /src
 COPY java/src/ src/
 RUN mkdir -p /out/classes && javac -encoding UTF-8 --release 21 -d /out/classes src/platform/*.java
 
-FROM eclipse-temurin:21-jre-noble@sha256:22138efd69393501fccd8176ae16b01791ed71ff801b28f0359415389b17c766
+FROM eclipse-temurin:21-jre-noble@sha256:000fd431958bc81a24abe1e8e5f0f0fd3ae365a594bd50aadb20696805f9408c
 ARG SOURCE_REVISION=unknown
 LABEL org.opencontainers.image.source="https://github.com/jorgefprietol/payment-architecture-platform" \
       org.opencontainers.image.title="Payment Platform Java" \
