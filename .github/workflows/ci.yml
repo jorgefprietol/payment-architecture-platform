@@ -69,7 +69,7 @@ jobs:
       - name: Validate workflow syntax
         run: docker run --rm -v "$PWD:/repo" -w /repo rhysd/actionlint@sha256:6f03470d0152251d7f07f7c4dc019dbe7024c72cd952f839544c7798843efa8f
       - name: Build CSharp
-        uses: docker/build-push-action@10e90e3645eae34f1e60eeb005ba3a3d33f178e8 # v6
+        uses: docker/build-push-action@c3c9e263c25d99ce0380d002d59b67737d91b0dc # v7.4.0
         with:
           context: .
           file: csharp/Dockerfile
@@ -81,7 +81,7 @@ jobs:
           cache-from: type=gha,scope=csharp
           cache-to: type=gha,mode=max,scope=csharp
       - name: Build Java
-        uses: docker/build-push-action@10e90e3645eae34f1e60eeb005ba3a3d33f178e8 # v6
+        uses: docker/build-push-action@c3c9e263c25d99ce0380d002d59b67737d91b0dc # v7.4.0
         with:
           context: .
           file: java/Dockerfile
